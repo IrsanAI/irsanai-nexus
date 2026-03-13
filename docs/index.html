@@ -99,7 +99,7 @@
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ repo_url: repoUrl.value.trim() })
+          body: JSON.stringify({ repo_url: repoUrl.value.trim(), save_report: true })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);

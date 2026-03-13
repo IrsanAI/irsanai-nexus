@@ -15,11 +15,6 @@ class AnalyzeRequest(BaseModel):
     save_report: bool = True
 
 
-
-class AnalyzeRequest(BaseModel):
-    repo_url: HttpUrl
-
-
 @router.post('/analyze')
 def analyze_repo(payload: AnalyzeRequest):
     repo_path: Path | None = None
@@ -28,8 +23,9 @@ def analyze_repo(payload: AnalyzeRequest):
         repo_path = clone_repo(repo_url)
         analysis = analyze(repo_path, repo_url)
 
+        should_save_report = getattr(payload, 'save_report', True)
         response = {'status': 'success', 'analysis': analysis}
-        if payload.save_report:
+        if should_save_report:
             saved_path = persist_report(analysis)
             response['report_id'] = saved_path.name
 

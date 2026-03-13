@@ -22,6 +22,18 @@ Dann öffnen:
 - API: `http://127.0.0.1:8000/health`
 - UI: `http://127.0.0.1:8000/`
 
+
+## Schnellstart (Windows / PowerShell)
+```powershell
+git clone https://github.com/irsanai/irsanai-nexus-repo
+cd irsanai-nexus-repo
+./scripts/setup.ps1
+.\.venv\Scripts\Activate.ps1
+uvicorn backend.main:app --reload --port 8000
+```
+
+> Hinweis: `&&` und `source` sind Bash-Befehle und funktionieren in PowerShell nicht.
+
 ## API-Nutzung für Analyse
 ```bash
 curl -X POST http://127.0.0.1:8000/analyze \
