@@ -73,10 +73,13 @@ Um die gehostete UI mit deiner API zu verbinden: `?api=https://dein-api-host` an
 Erzeuge in PyCharm/lokal ein deterministisches JSON-Inventar und teile es für Delta-Analyse:
 ```bash
 python scripts/preflight_inventory.py --output preflight.local.json
+<<<<<<< codex/optimize-repository-setup-and-configurations-725rf7
 ```
 
 ## Integrations-Audit
 Führe ein gewichtetes Integrations-Audit aus (Architektur, Betrieb, Qualität, UX):
 ```bash
 python scripts/integration_audit.py
+=======
+>>>>>>> main
 ```
