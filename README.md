@@ -4,6 +4,7 @@ IRSAN AI Nexus analyzes GitHub repositories and returns a unified intelligence p
 
 ## Highlights
 - FastAPI backend with `/health`, `/analyze`, and `/reports` endpoints.
+- Top-file snippets skip binary files to keep analysis output readable.
 - Safe GitHub cloning with URL validation.
 - Windows-friendly cleanup handling for locked `.git/objects/pack/*` files.
 - Lightweight web UI at `/` for direct analysis runs.
