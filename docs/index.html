@@ -63,6 +63,12 @@
     .row { display:grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
     textarea { width: 100%; min-height: 320px; resize: vertical; line-height: 1.4; }
     .small { min-height: 200px; }
+    .heatmap-grid { margin-top:.8rem; display:grid; gap:.4rem; }
+    .heat-row { display:grid; grid-template-columns: 140px 1fr 72px; gap:.6rem; align-items:center; }
+    .heat-label { color: var(--muted); font-size:.86rem; }
+    .heat-track { height: 14px; border-radius:999px; background: rgba(122,144,190,.2); overflow:hidden; }
+    .heat-bar { height:100%; }
+    .heat-value { font-variant-numeric: tabular-nums; text-align:right; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; border-bottom: 1px solid rgba(142,162,216,.2); padding: .5rem .4rem; font-size: .92rem; }
     a { color: var(--accent); }
@@ -105,6 +111,7 @@
         <button id="compare-btn" type="button">Compare</button>
       </div>
       <textarea class="small" id="compare-output" readonly>{ "hint": "Comparison delta appears here." }</textarea>
+      <div class="heatmap-grid" id="delta-heatmap"></div>
     </section>
 
     <section class="row">
@@ -135,6 +142,7 @@
     const pills = document.getElementById('language-pills');
     const compareId1 = document.getElementById('compare-id1');
     const compareId2 = document.getElementById('compare-id2');
+    const deltaHeatmap = document.getElementById('delta-heatmap');
 
     const kpiIq = document.getElementById('kpi-iq');
     const kpiCommits = document.getElementById('kpi-commits');
@@ -202,12 +210,49 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Compare failed');
         compareOutput.value = JSON.stringify(data, null, 2);
+        renderHeatmap(data.comparison || {});
       } catch (error) {
         compareOutput.value = JSON.stringify({ error: error.message }, null, 2);
+        deltaHeatmap.innerHTML = '';
       } finally {
         compareBtn.disabled = false;
       }
     });
+
+    function colorForDelta(value) {
+      if (value > 0) return 'linear-gradient(90deg,#60f5b5,#2fc0ff)';
+      if (value < 0) return 'linear-gradient(90deg,#ff9cab,#ff6f91)';
+      return 'linear-gradient(90deg,#97a8d6,#7f8fb7)';
+    }
+
+    function renderHeatmap(comparison) {
+      const deltas = [];
+      const metricDeltas = comparison.metric_deltas || {};
+      Object.entries(metricDeltas).forEach(([key, obj]) => {
+        deltas.push({ label: key, delta: Number(obj.delta || 0) });
+      });
+      if ((comparison.repo_iq_delta || {}).delta !== undefined) {
+        deltas.push({ label: 'repo_iq', delta: Number(comparison.repo_iq_delta.delta || 0) });
+      }
+
+      if (!deltas.length) {
+        deltaHeatmap.innerHTML = '';
+        return;
+      }
+
+      const maxAbs = Math.max(...deltas.map((d) => Math.abs(d.delta)), 1);
+      deltaHeatmap.innerHTML = deltas.map((d) => {
+        const width = Math.max(6, Math.round((Math.abs(d.delta) / maxAbs) * 100));
+        const sign = d.delta > 0 ? '+' : '';
+        return `
+          <div class="heat-row">
+            <div class="heat-label">${d.label}</div>
+            <div class="heat-track"><div class="heat-bar" style="width:${width}%;background:${colorForDelta(d.delta)}"></div></div>
+            <div class="heat-value">${sign}${d.delta}</div>
+          </div>
+        `;
+      }).join('');
+    }
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();

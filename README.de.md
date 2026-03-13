@@ -7,7 +7,7 @@ IRSAN AI Nexus analysiert GitHub-Repositories und liefert ein einheitliches Inte
 - Top-File-Snippets überspringen Binärdateien für besser lesbare Analyse-Ausgaben.
 - Sicheres GitHub-Klonen mit URL-Validierung.
 - Windows-robustes Cleanup für gesperrte `.git/objects/pack/*`-Dateien.
-- Leichte Insight-Console unter `/` mit KPI-Karten, Report-Vergleich und Report-Browser.
+- Leichte Insight-Console unter `/` mit KPI-Karten, Report-Vergleich, Delta-Heatmap und Report-Browser.
 - GitHub-Pages-fähige statische Seite aus `docs/`.
 
 ## Schnellstart (lokal)
