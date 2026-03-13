@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 
 from .language_detector import detect_languages
 from .innovation_scorer import calculate_repo_iq as calculate_repo_iq_metrics, hidden_unicorn_probability
-from backend.config import settings
 
 # falls du zusätzlich ein einfaches heuristisches IQ-Modul eingebaut hast
 # (optional, siehe backend/analyzer/repo_intelligence.py)
