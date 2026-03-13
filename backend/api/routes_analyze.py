@@ -15,6 +15,11 @@ class AnalyzeRequest(BaseModel):
     save_report: bool = True
 
 
+
+class AnalyzeRequest(BaseModel):
+    repo_url: HttpUrl
+
+
 @router.post('/analyze')
 def analyze_repo(payload: AnalyzeRequest):
     repo_path: Path | None = None
