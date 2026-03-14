@@ -1,8 +1,7 @@
-version: '3.9'
 services:
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backend
     container_name: irsanai-nexus-backend
     ports:
@@ -17,7 +16,7 @@ services:
 
   backend-dev:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backend
     container_name: irsanai-nexus-backend-dev
     profiles: ['dev']
@@ -28,7 +27,7 @@ services:
       WORK_DIR: /tmp/irsanai-nexus-work
       REPORTS_DIR: /app/reports_output
     volumes:
-      - ./:/app
+      - ../:/app
       - repo_work:/tmp/irsanai-nexus-work
       - reports:/app/reports_output
 
