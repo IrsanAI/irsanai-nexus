@@ -1,14 +1,36 @@
-version: '3.9'
 services:
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backend
+    container_name: irsanai-nexus-backend
     ports:
       - '8000:8000'
+    environment:
+      WORK_DIR: /tmp/irsanai-nexus-work
+      REPORTS_DIR: /app/reports_output
     volumes:
       - repo_work:/tmp/irsanai-nexus-work
       - reports:/app/reports_output
+    restart: unless-stopped
+
+  backend-dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: irsanai-nexus-backend-dev
+    profiles: ['dev']
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - '8001:8000'
+    environment:
+      WORK_DIR: /tmp/irsanai-nexus-work
+      REPORTS_DIR: /app/reports_output
+    volumes:
+      - ../:/app
+      - repo_work:/tmp/irsanai-nexus-work
+      - reports:/app/reports_output
+
 volumes:
   repo_work:
   reports:
