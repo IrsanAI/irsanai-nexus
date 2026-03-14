@@ -1,4 +1,6 @@
-import click, json
+import json
+
+import click
 from pathlib import Path
 
 @click.group()
