@@ -17,4 +17,10 @@ build/
 .idea/
 
 # OS
-.DS_Storeanalysis.json
+.DS_Store
+
+# Runtime artifacts
+analysis.json
+repo_work/
+preflight.local.json
+reports_output/
