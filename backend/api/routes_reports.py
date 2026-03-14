@@ -113,3 +113,16 @@ def get_report_html(report_id: str):
         return _render_report_html(payload, report_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get('/{report_id}/graph')
+def get_report_graph(report_id: str):
+    try:
+        payload = load_report(report_id)
+        return {
+            'id': report_id,
+            'report_schema_version': payload.get('report_schema_version', '1.0.0'),
+            'insight_graph': payload.get('insight_graph', {'nodes': [], 'edges': []}),
+        }
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

@@ -143,7 +143,7 @@ python scripts/integration_audit.py
 | UX | Insight-Console mit KPI-Karten | ✅ | Schnelles Verständnis des Repo-Zustands. |
 | UX | Delta-Heatmap-Visualisierung | ✅ | Schnelle visuelle Interpretation von Trendrichtung/-stärke. |
 | UX | Timeline-View der Report-Entwicklung | 🟡 | Teilweise via Recent Reports vorhanden; eigene Timeline-UI noch offen. |
-| Graph | Datenmodell für Nodes/Edges (Dateien, Risiken, Metriken) | ⚪ | Voraussetzung für hochdimensionale Navigation. |
+| Graph | Datenmodell für Nodes/Edges (Dateien, Risiken, Metriken) | 🟡 | `insight_graph` + `/reports/{id}/graph` als v1-Basis eingeführt. |
 | Graph | 2.5D-Canvas mit Zoom/Pan/Filter | ⚪ | Brücke zu immersiver Interaktion ohne sofortige Full-3D-Komplexität. |
 | AI-Loop | Prompt-Workbench (provider-neutral) | ⚪ | Unterstützt externen LLM-Augmentation-Workflow. |
 | AI-Loop | LLM-Response-Ingest + semantischer Diff | ⚪ | Macht aus One-shot-Ausgaben iteratives Intelligence-Wachstum. |
