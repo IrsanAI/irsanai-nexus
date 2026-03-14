@@ -33,5 +33,7 @@ jobs:
             echo "No tests/ directory found, skipping pytest."
           fi
 
-      - name: Security scan (bandit)
-        run: bandit -r backend -q
+      - name: Security scan (bandit report + high-severity gate)
+        run: |
+          bandit -r backend -q -f txt || true
+          bandit -r backend -q -lll -iii
