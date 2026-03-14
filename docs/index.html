@@ -73,11 +73,25 @@
     th, td { text-align: left; border-bottom: 1px solid rgba(142,162,216,.2); padding: .5rem .4rem; font-size: .92rem; }
     a { color: var(--accent); }
     .pill { display:inline-block; border:1px solid rgba(136,123,255,.5); border-radius:999px; padding:.15rem .55rem; margin-right:.3rem; color:#d4cdff; }
+
+    .graph-controls { display:grid; grid-template-columns: 1fr 170px auto; gap:.5rem; margin:.7rem 0; }
+    .graph-wrap { display:grid; grid-template-columns: 1.3fr .9fr; gap:.8rem; }
+    .graph-canvas { min-height: 260px; border:1px solid rgba(142,162,216,.25); border-radius:12px; background: rgba(7,12,28,.65); padding:.6rem; overflow:auto; }
+    .graph-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(170px,1fr)); gap:.45rem; }
+    .graph-node { border:1px solid rgba(142,162,216,.25); border-radius:10px; padding:.45rem .5rem; background: rgba(12,18,36,.9); cursor:pointer; }
+    .graph-node:hover { border-color: rgba(109, 228, 255, 0.55); }
+    .graph-node .n-type { font-size:.73rem; color: var(--muted); text-transform: uppercase; letter-spacing:.04em; }
+    .graph-node .n-label { font-size:.9rem; font-weight:600; margin:.2rem 0; word-break: break-word; }
+    .graph-node .n-value { font-size:.82rem; color:#b5caf7; }
+    .graph-side { min-height:260px; border:1px solid rgba(142,162,216,.25); border-radius:12px; background: rgba(7,12,28,.65); padding:.7rem; }
+    .meta { font-size:.86rem; color: var(--muted); }
     @media (max-width: 1000px) {
       .insights { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .row { grid-template-columns: 1fr; }
       form { grid-template-columns: 1fr; }
       .inline-grid { grid-template-columns: 1fr; }
+      .graph-controls { grid-template-columns: 1fr; }
+      .graph-wrap { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -114,6 +128,31 @@
       <div class="heatmap-grid" id="delta-heatmap"></div>
     </section>
 
+    <section class="card">
+      <h2 style="margin-top:0">Graph View (v1)</h2>
+      <p class="subtitle" style="margin:.1rem 0 .4rem">Lädt <code>/reports/{id}/graph</code> und zeigt Knoten mit Filter + Detailpanel.</p>
+      <div class="graph-controls">
+        <select id="graph-report-id"></select>
+        <select id="graph-type-filter">
+          <option value="all">Alle Typen</option>
+          <option value="repo">repo</option>
+          <option value="metric">metric</option>
+          <option value="language">language</option>
+          <option value="risk">risk</option>
+        </select>
+        <button id="graph-load-btn" type="button">Graph laden</button>
+      </div>
+      <div class="graph-wrap">
+        <div class="graph-canvas" id="graph-canvas"><div class="meta">Noch kein Graph geladen.</div></div>
+        <aside class="graph-side">
+          <h3 style="margin:.2rem 0 .6rem">Node Details</h3>
+          <div id="graph-detail" class="meta">Klicke auf einen Knoten, um Details zu sehen.</div>
+          <hr style="border-color:rgba(142,162,216,.22); margin: .7rem 0" />
+          <div id="graph-stats" class="meta">Nodes: — | Edges: —</div>
+        </aside>
+      </div>
+    </section>
+
     <section class="row">
       <article class="card">
         <h2 style="margin-top:0">Analysis JSON</h2>
@@ -143,11 +182,19 @@
     const compareId1 = document.getElementById('compare-id1');
     const compareId2 = document.getElementById('compare-id2');
     const deltaHeatmap = document.getElementById('delta-heatmap');
+    const graphReportId = document.getElementById('graph-report-id');
+    const graphTypeFilter = document.getElementById('graph-type-filter');
+    const graphLoadBtn = document.getElementById('graph-load-btn');
+    const graphCanvas = document.getElementById('graph-canvas');
+    const graphDetail = document.getElementById('graph-detail');
+    const graphStats = document.getElementById('graph-stats');
 
     const kpiIq = document.getElementById('kpi-iq');
     const kpiCommits = document.getElementById('kpi-commits');
     const kpiSecurity = document.getElementById('kpi-security');
     const kpiLanguages = document.getElementById('kpi-languages');
+
+    let currentGraph = null;
 
     const params = new URLSearchParams(window.location.search);
     const apiBase = params.get('api') || window.localStorage.getItem('IRSAN_API_BASE') || '';
@@ -173,6 +220,7 @@
       const options = items.map((r) => `<option value="${r.id}">${r.id}</option>`).join('');
       compareId1.innerHTML = options;
       compareId2.innerHTML = options;
+      graphReportId.innerHTML = options;
       if (items.length > 1) compareId2.selectedIndex = 1;
     }
 
@@ -186,6 +234,8 @@
           reportsBody.innerHTML = '<tr><td colspan="3">No reports yet.</td></tr>';
           compareId1.innerHTML = '<option>No reports</option>';
           compareId2.innerHTML = '<option>No reports</option>';
+          graphReportId.innerHTML = '<option>No reports</option>';
+          graphCanvas.innerHTML = '<div class="meta">Noch keine Reports vorhanden.</div>';
           return;
         }
         reportsBody.innerHTML = items.map((r) => {
@@ -254,6 +304,61 @@
       }).join('');
     }
 
+
+    function renderGraph(nodes, edges) {
+      const filter = graphTypeFilter.value;
+      const filtered = (nodes || []).filter((n) => filter === 'all' ? true : n.type === filter);
+      if (!filtered.length) {
+        graphCanvas.innerHTML = '<div class="meta">Keine Nodes für diesen Filter.</div>';
+        graphDetail.textContent = 'Klicke auf einen Knoten, um Details zu sehen.';
+        return;
+      }
+
+      graphCanvas.innerHTML = `<div class="graph-grid">${filtered.map((node) => {
+        const value = node.value !== undefined ? `Value: ${node.value}` : (node.meta && node.meta.level ? `Level: ${node.meta.level}` : '');
+        return `<button type="button" class="graph-node" data-node-id="${node.id}">
+          <div class="n-type">${node.type || 'unknown'}</div>
+          <div class="n-label">${node.label || node.id}</div>
+          <div class="n-value">${value}</div>
+        </button>`;
+      }).join('')}</div>`;
+
+      graphCanvas.querySelectorAll('.graph-node').forEach((el) => {
+        el.addEventListener('click', () => {
+          const nodeId = el.getAttribute('data-node-id');
+          const node = (nodes || []).find((n) => n.id === nodeId);
+          const related = (edges || []).filter((e) => e.from === nodeId || e.to === nodeId);
+          graphDetail.textContent = JSON.stringify({ node, related_edges: related }, null, 2);
+        });
+      });
+    }
+
+    async function loadGraph() {
+      const reportId = graphReportId.value;
+      if (!reportId || reportId === 'No reports') return;
+      graphLoadBtn.disabled = true;
+      try {
+        const res = await fetch(endpoint(`/reports/${encodeURIComponent(reportId)}/graph`));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Graph laden fehlgeschlagen');
+        currentGraph = data.insight_graph || { nodes: [], edges: [] };
+        const nodes = currentGraph.nodes || [];
+        const edges = currentGraph.edges || [];
+        graphStats.textContent = `Nodes: ${nodes.length} | Edges: ${edges.length} | Schema: ${data.report_schema_version || '1.0.0'}`;
+        renderGraph(nodes, edges);
+      } catch (error) {
+        graphCanvas.innerHTML = `<div class="meta">Fehler: ${error.message}</div>`;
+      } finally {
+        graphLoadBtn.disabled = false;
+      }
+    }
+
+    graphLoadBtn.addEventListener('click', loadGraph);
+    graphTypeFilter.addEventListener('change', () => {
+      if (!currentGraph) return;
+      renderGraph(currentGraph.nodes || [], currentGraph.edges || []);
+    });
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       button.disabled = true;
@@ -285,7 +390,11 @@
       }
     });
 
-    loadReports();
+    loadReports().then(() => {
+      if (graphReportId.value && graphReportId.value !== 'No reports') {
+        loadGraph();
+      }
+    });
   </script>
 </body>
 </html>
