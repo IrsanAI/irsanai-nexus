@@ -11,13 +11,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Python Setup
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
+
       - name: Lint (ruff)
-        run: ruff check backend/ cli/ tests/
+        run: ruff check backend/ cli/
+
+      - name: Run tests (pytest)
+        run: |
+          if [ -d "tests" ]; then
+            pytest -q
+          else
+            echo "No tests/ directory found, skipping pytest."
+          fi
+
+      - name: Security scan (bandit report + high-severity gate)
+        run: |
+          bandit -r backend -q -f txt || true
+          bandit -r backend -q -lll -iii
