@@ -5,5 +5,3 @@ click
 requests
 radon
 bandit
-pytest
-ruff

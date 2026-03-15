@@ -11,3 +11,6 @@ license = { text = "MIT" }
 authors = [
   { name = "irsanai", email = "no-reply@irsanai.example" }
 ]
+
+[project.scripts]
+repo-intel = "cli.main:cli"

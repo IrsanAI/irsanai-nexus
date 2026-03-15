@@ -33,6 +33,10 @@ jobs:
             echo "No tests/ directory found, skipping pytest."
           fi
 
+
+      - name: Integration Audit
+        run: python scripts/integration_audit.py | python -m json.tool
+
       - name: Security scan (bandit report + high-severity gate)
         run: |
           bandit -r backend -q -f txt || true
