@@ -117,6 +117,8 @@ def list_reports(limit: int = 25) -> list[dict]:
         try:
             content = json.loads(p.read_text(encoding='utf-8'))
             report = content.get('report', {})
+            metrics = report.get('metrics', {})
+            repo_iq = (((report.get('repo_iq') or {}).get('metrics_iq') or {}).get('repo_iq'))
             entries.append(
                 {
                     'id': p.name,
@@ -124,6 +126,10 @@ def list_reports(limit: int = 25) -> list[dict]:
                     'report_schema_version': content.get('report_schema_version', '1.0.0'),
                     'repo_url': report.get('repo_meta', {}).get('url'),
                     'analysis_timestamp': report.get('timestamp'),
+                    'repo_iq': repo_iq,
+                    'commit_count': metrics.get('commit_count'),
+                    'total_issues': metrics.get('total_issues'),
+                    'language_count': metrics.get('language_count'),
                 }
             )
         except Exception:

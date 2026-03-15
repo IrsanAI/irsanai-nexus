@@ -87,6 +87,16 @@ def get_reports(limit: int = Query(default=25, ge=1, le=200)):
     return {'items': items, 'count': len(items)}
 
 
+
+
+@router.get('/timeline')
+def get_reports_timeline(limit: int = Query(default=50, ge=1, le=300), repo_url: str | None = Query(default=None)):
+    items = list_reports(limit=limit)
+    if repo_url:
+        items = [item for item in items if item.get('repo_url') == repo_url]
+    timeline = list(reversed(items))
+    return {'items': timeline, 'count': len(timeline)}
+
 @router.get('/compare')
 def compare_reports_endpoint(id1: str = Query(...), id2: str = Query(...)):
     try:

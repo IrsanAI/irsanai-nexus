@@ -85,6 +85,10 @@
     .graph-node .n-value { font-size:.82rem; color:#b5caf7; }
     .graph-side { min-height:260px; border:1px solid rgba(142,162,216,.25); border-radius:12px; background: rgba(7,12,28,.65); padding:.7rem; }
     .meta { font-size:.86rem; color: var(--muted); }
+    .timeline { margin-top:.8rem; }
+    .timeline svg { width:100%; height:180px; display:block; border:1px solid rgba(142,162,216,.25); border-radius:12px; background: rgba(7,12,28,.65); }
+    .timeline-legend { margin-top:.45rem; font-size:.82rem; color:var(--muted); display:flex; gap:1rem; }
+    .dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:.35rem; }
     @media (max-width: 1000px) {
       .insights { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .row { grid-template-columns: 1fr; }
@@ -115,6 +119,18 @@
         <div class="kpi"><div class="label">Languages</div><div class="value" id="kpi-languages">—</div></div>
       </div>
       <div id="language-pills" style="margin-top:.8rem"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0">Timeline (Reports)</h2>
+      <div class="timeline">
+        <svg id="timeline-svg" viewBox="0 0 800 180" preserveAspectRatio="none"></svg>
+      </div>
+      <div id="timeline-empty" class="meta" style="margin-top:.45rem">Noch keine Timeline-Daten.</div>
+      <div class="timeline-legend">
+        <span><span class="dot" style="background:#6de4ff"></span>Repo IQ</span>
+        <span><span class="dot" style="background:#ff8ba7"></span>Security Issues</span>
+      </div>
     </section>
 
     <section class="card">
@@ -188,6 +204,8 @@
     const graphCanvas = document.getElementById('graph-canvas');
     const graphDetail = document.getElementById('graph-detail');
     const graphStats = document.getElementById('graph-stats');
+    const timelineSvg = document.getElementById('timeline-svg');
+    const timelineEmpty = document.getElementById('timeline-empty');
 
     const kpiIq = document.getElementById('kpi-iq');
     const kpiCommits = document.getElementById('kpi-commits');
@@ -224,6 +242,49 @@
       if (items.length > 1) compareId2.selectedIndex = 1;
     }
 
+
+    function renderTimeline(items) {
+      const ordered = [...(items || [])].reverse();
+      const iqPoints = ordered.map((item) => Number(item.repo_iq)).filter((v) => Number.isFinite(v));
+      const secPoints = ordered.map((item) => Number(item.total_issues)).filter((v) => Number.isFinite(v));
+
+      if (!ordered.length || (!iqPoints.length && !secPoints.length)) {
+        timelineSvg.innerHTML = '';
+        timelineEmpty.textContent = 'Noch keine numerischen Timeline-Daten vorhanden.';
+        return;
+      }
+
+      const width = 800;
+      const height = 180;
+      const padX = 28;
+      const padY = 22;
+      const plotW = width - padX * 2;
+      const plotH = height - padY * 2;
+
+      const iqMax = Math.max(...iqPoints, 1);
+      const secMax = Math.max(...secPoints, 1);
+      const maxLen = Math.max(ordered.length - 1, 1);
+
+      const toPolyline = (key, maxValue) => ordered.map((item, index) => {
+        const value = Number(item[key]);
+        const safe = Number.isFinite(value) ? value : 0;
+        const x = padX + (index / maxLen) * plotW;
+        const y = padY + (1 - (safe / maxValue)) * plotH;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+
+      const iqPolyline = toPolyline('repo_iq', iqMax);
+      const secPolyline = toPolyline('total_issues', secMax);
+
+      timelineSvg.innerHTML = `
+        <line x1="${padX}" y1="${padY}" x2="${padX}" y2="${height - padY}" stroke="rgba(142,162,216,.35)" />
+        <line x1="${padX}" y1="${height - padY}" x2="${width - padX}" y2="${height - padY}" stroke="rgba(142,162,216,.35)" />
+        <polyline fill="none" stroke="#6de4ff" stroke-width="2.5" points="${iqPolyline}" />
+        <polyline fill="none" stroke="#ff8ba7" stroke-width="2.5" points="${secPolyline}" />
+      `;
+      timelineEmpty.textContent = `Punkte: ${ordered.length} (ältester → neuester Report)`;
+    }
+
     async function loadReports() {
       try {
         const res = await fetch(endpoint('/reports?limit=20'));
@@ -236,6 +297,7 @@
           compareId2.innerHTML = '<option>No reports</option>';
           graphReportId.innerHTML = '<option>No reports</option>';
           graphCanvas.innerHTML = '<div class="meta">Noch keine Reports vorhanden.</div>';
+          renderTimeline([]);
           return;
         }
         reportsBody.innerHTML = items.map((r) => {
@@ -245,8 +307,10 @@
           return `<tr><td title="${r.id}">${short}</td><td>${repo}</td><td><a target="_blank" href="${htmlHref}">open</a></td></tr>`;
         }).join('');
         fillCompareSelects(items);
+        renderTimeline(items);
       } catch (error) {
         reportsBody.innerHTML = `<tr><td colspan="3">Error: ${error.message}</td></tr>`;
+        renderTimeline([]);
       }
     }
 

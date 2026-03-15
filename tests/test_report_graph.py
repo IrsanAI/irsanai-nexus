@@ -57,3 +57,24 @@ def test_compare_reports_includes_graph_delta():
 
     assert delta['graph_delta']['nodes']['delta'] == 1
     assert delta['graph_delta']['edges']['delta'] == 1
+
+
+def test_list_reports_includes_timeline_summary_fields(tmp_path, monkeypatch):
+    monkeypatch.setattr(report_store.settings, 'reports_dir', tmp_path)
+
+    report = {
+        'repo_meta': {'url': 'https://github.com/example/repo'},
+        'metrics': {'commit_count': 9, 'language_count': 2, 'total_issues': 1},
+        'repo_iq': {'metrics_iq': {'repo_iq': 73}},
+        'languages': {'Python': {'count': 9, 'percent': 100.0}},
+    }
+
+    report_store.persist_report(report)
+    items = report_store.list_reports(limit=5)
+
+    assert items
+    first = items[0]
+    assert first['repo_iq'] == 73
+    assert first['commit_count'] == 9
+    assert first['total_issues'] == 1
+    assert first['language_count'] == 2
